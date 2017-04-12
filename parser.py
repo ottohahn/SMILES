@@ -28,16 +28,16 @@ elementsymbol = pp.oneOf(['Al','Am','Sb','Ar','33','At','Ba','Bk','Be','Bi',
                            'Y','Zn','Zr',])
 hcount = pp.Regex('H[0-9]+')
 ringclosure = pp.Optional( pp.Literal('%') + pp.oneOf(['1 2 3 4 5 6 7 8 9'])) + pp.oneOf(['0 1 2 3 4 5 6 7 8 9'])
-charge = (pp.Literal('-') +  pp.Optional( pp.oneOf(['-02-9']) | pp.Literal('1') + pp.Optional(pp.oneOf(['0-5'])) )) | pp.Literal('+') + pp.Optional( pp.oneOf(['+02-9']) | pp.Literal('1') + pp.Optional(pp.oneOf('[0-5]')) )
-chiralclass = pp.Optional(pp.Literal('@') + pp.Optional( pp.Literal('@'))| ( pp.Literal('TH') | pp.Literal('AL') ) + pp.oneOf('[1-2]') | pp.Literal('SP') + pp.oneOf('[1-3]') | pp.Literal('TB') + ( pp.Literal('1') + pp.Optional(pp.oneOf('[0-9]')) | pp.Literal('2') + pp.Optional(pp.Literal('0')) | pp.oneOf('[3-9]') ) | pp.Literal('OH') + ( ( pp.Literal('1') | pp.Literal('2') ) + pp.Optional(pp.oneOf('[0-9]')) | pp.Literal('3') + pp.Optional(pp.Literal('0')) | pp.oneOf('[4-9]')) )
-atomspec = pp.Literal('[') +  pp.Optional(isotope) + ( pp.Literal('se') | pp.Literal('as') | aromaticsymbol | elementsymbol | pp.Literal('*') ) + pp.Optional(chiralclass)+ pp.Optional(hcount)+pp.Optional(charge)+ pp.Optional(atomclass) + pp.Literal(']')
-atom = organicsymbol | aromaticsymbol | pp.Literal('*') | atomspec
-chain = pp.OneOrMore(pp.Optional(bond) + ( atom | ringclosure ))
+charge = (pp.Literal('-') +  pp.Optional( pp.oneOf(['-02-9']) ^ pp.Literal('1') + pp.Optional(pp.oneOf(['0-5'])) )) ^ pp.Literal('+') + pp.Optional( pp.oneOf(['+02-9']) ^ pp.Literal('1') + pp.Optional(pp.oneOf('[0-5]')) )
+chiralclass = pp.Optional(pp.Literal('@') + pp.Optional( pp.Literal('@')) ^ ( pp.Literal('TH') ^ pp.Literal('AL') ) + pp.oneOf('[1-2]') ^ pp.Literal('SP') + pp.oneOf('[1-3]') ^ pp.Literal('TB') + ( pp.Literal('1') + pp.Optional(pp.oneOf('[0-9]')) ^ pp.Literal('2') + pp.Optional(pp.Literal('0')) ^ pp.oneOf('[3-9]') ) ^ pp.Literal('OH') + ( ( pp.Literal('1') ^ pp.Literal('2') ) + pp.Optional(pp.oneOf('[0-9]')) ^ pp.Literal('3') + pp.Optional(pp.Literal('0')) ^ pp.oneOf('[4-9]')) )
+atomspec = pp.Literal('[') +  pp.Optional(isotope) + ( pp.Literal('se') ^ pp.Literal('as') ^ aromaticsymbol ^ elementsymbol ^ pp.Literal('*') ) + pp.Optional(chiralclass)+ pp.Optional(hcount)+pp.Optional(charge)+ pp.Optional(atomclass) + pp.Literal(']')
+atom = organicsymbol ^ aromaticsymbol ^ pp.Literal('*') ^ atomspec
+chain = pp.OneOrMore(pp.Optional(bond) + ( atom ^ ringclosure ))
 ## This looks fucked up
 smiles = pp.Forward()
 branch = pp.Forward()
-smiles << pp.Combine(atom + pp.ZeroOrMore(chain | branch))
-branch << (pp.Literal('(') + (bond | pp.OneOrMore(smiles)) + pp.Literal(')'))
+smiles << atom + pp.ZeroOrMore(chain ^ branch)
+branch << (pp.Literal('(') + (bond ^ pp.OneOrMore(smiles)) + pp.Literal(')'))
 
 
 
@@ -49,9 +49,9 @@ def IsValidSMILES(text):
     results = smiles.parseString(text)
     if results:
         is_valid = True
-        return(is_valid, results)
+        return(is_valid)
     return is_valid
 
 if __name__ == '__main__':
-    astr = 'C%1CCCCC%1C'
-    print(IsValidSMILES(astr)[1]) 
+    astr = 'CC(CC)CO[Na+]'
+    print(IsValidSMILES(astr)) 
